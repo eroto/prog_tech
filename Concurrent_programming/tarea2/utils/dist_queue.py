@@ -13,14 +13,16 @@ class AsyncScrapper():
         async with session.get(url) as response:
             return await response.text
     
-    async def scrape_tittle(self, session, url):
+    async def scrapper_title(self, session, url):
         try:
-            html = await self.fetch(session,url)
-            print(html)
+            async with session.get(url) as resp:
+                print(f"resp.status: {resp.status}")
+                print(await resp.text())
         except Exception as e:
-            print(f"Error, no response reseived {ur}:{e}")
+            print(f"Error, no response reseived {url}:{e}")
     
     async def run(self):
-        async with aiohtpp.ClientSession() as session:
-            task =[self.scrapper.title(session, url) for url in self.urls]
+        async with aiohttp.ClientSession() as session:
+            print("Running...")
+            task =[self.scrapper_title(session, url) for url in self.urls]
             await asyncio.gather(*task)

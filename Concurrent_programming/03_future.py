@@ -24,6 +24,7 @@ async def main():
     #si no se ha completado la ejecucion 
     #espera a que me regrese el valor
     result = await task
+    print(f"result:{result}")
 
 if __name__== "__main__":
     asyncio.run(main())

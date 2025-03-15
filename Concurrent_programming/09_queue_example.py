@@ -1,44 +1,58 @@
-import time
 import random
-
-from multiprocessing import Process, Queue, current_process, freeze_support
+import time
+from multiprocessing import current_process
+from multiprocessing import freeze_support
+from multiprocessing import Process
+from multiprocessing import Queue
 
 #
 # Function run by worker processes
 #
 
+
 def worker(input, output):
-    t1 = (time.time() * 1000)
+    t1 = time.time() * 1000
     print(current_process().name)
     print(f"Worker start time:{t1}")
-    for func, args in iter(input.get, 'STOP'):
+    for func, args in iter(input.get, "STOP"):
         result = calculate(func, args)
         output.put(result)
+
 
 #
 # Function used to calculate result
 #
 
+
 def calculate(func, args):
     result = func(*args)
-    return '%s says that %s%s = %s' % \
-        (current_process().name, func.__name__, args, result)
+    return "%s says that %s%s = %s" % (
+        current_process().name,
+        func.__name__,
+        args,
+        result,
+    )
+
 
 #
 # Functions referenced by tasks
 #
 
+
 def mul(a, b):
-    time.sleep(0.5*random.random())
+    time.sleep(0.5 * random.random())
     return a * b
 
+
 def plus(a, b):
-    time.sleep(0.5*random.random())
+    time.sleep(0.5 * random.random())
     return a + b
+
 
 #
 #
 #
+
 
 def test():
     NUMBER_OF_PROCESSES = 6
@@ -62,9 +76,9 @@ def test():
         Process(target=worker, args=(task_queue, done_queue)).start()
 
     # Get and print results
-    print('Unordered results:')
+    print("Unordered results:")
     for i in range(len(TASKS1)):
-        print('\t', done_queue.get())
+        print("\t", done_queue.get())
 
     # Add more tasks using `put()`
     for task in TASKS2:
@@ -72,13 +86,13 @@ def test():
 
     # Get and print some more results
     for i in range(len(TASKS2)):
-        print('\t', done_queue.get())
+        print("\t", done_queue.get())
 
     # Tell child processes to stop
     for i in range(NUMBER_OF_PROCESSES):
-        task_queue.put('STOP')
+        task_queue.put("STOP")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     freeze_support()
     test()

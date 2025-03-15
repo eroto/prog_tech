@@ -12,7 +12,7 @@ def factorial(number):
 # entry point
 if __name__ == "__main__":
     print(f"{factorial(5)=}")
-    
+
     '''
     numbers = [1,2,3,4,5]
     sq_numbers = map(lambda x : x**2,numbers)

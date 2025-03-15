@@ -1,28 +1,29 @@
 #!/usr/bin/python3
 
-from functools import reduce
-from itertools import chain
-from collections import Counter
-import requests
-import time
 import random
 import string
+import time
+from collections import Counter
+from functools import reduce
+from itertools import chain
 
-url2 = "    
+import requests
+
+url2 = "
 
 #A Maybe monada
-class MyMonad: 
+class MyMonad:
     def __init__(self, value=None):
         self.value = value
 
     def is_empty(self): #return a bool. In python "is" function is a comparator
         return self.value is None
-    
+
     def get(self):
         if self.is_empty():
             print("No value to return. get() return nothing")
         return self.value
-        
+
     '''
     Name:   bind
     Type:   High-order function
@@ -35,8 +36,8 @@ class MyMonad:
             return self
         else:
             return func(self.value)
-        
-    
+
+
     def checkType(self):
         if not isinstance(self.value, (str, list, dict)):
             raise TypeError("The input must be a string or a list of strings.")
@@ -65,7 +66,7 @@ class MyMonad:
     Def:    filter applies a function (func) to the value
             inside the Monad (self.value), an iterator.
             Functions passed shal return True if the
-            search/value is found, else False.            
+            search/value is found, else False.
     '''
     def flat_filter(self,func):
         newlist = []
@@ -74,7 +75,7 @@ class MyMonad:
         else:
             self.checkType()
         return MyMonad(list(filter(func,self.value)))
-    
+
     def __repr__(self):
         return f'MyMonad({self.value})'
 
@@ -82,7 +83,7 @@ class MyMonad:
 '''
 Name: tokenize
 Type:First-Class Functions
-Def: 
+Def:
 '''
 def tokenize(text):
     #remove  any punctuation and remove lowercase
@@ -94,7 +95,7 @@ def tokenize(text):
 '''
 Name: avg_word_lenght
 Type: First-Class Functions
-Def: 
+Def:
 '''
 def avg_word_lenght(tokens):
     total_lenght = reduce(lambda total, word: total + len(word), tokens,0)
@@ -104,7 +105,7 @@ def avg_word_lenght(tokens):
 '''
 Name: get_PushEvent_msgs
 Type: First-Class Functions
-Def: 
+Def:
 '''
 def get_PushEvent_msgs(resp):
     msg_txt = resp['payload']['commits'][0]['message']+" "
@@ -124,7 +125,7 @@ def fetch_user_data():
 '''
 Name: filter_PushEvents
 Type: First-Class Functions
-Def: 
+Def:
 '''
 def filter_PushEvents(n):
     if n.get("type") == "PushEvent":
@@ -135,7 +136,7 @@ def filter_PushEvents(n):
 '''
 Name: word_frequency
 Type: First-Class Functions
-Def: 
+Def:
 '''
 def word_frequency(tokens):
     #return list(map(Counter,tokens))
@@ -146,7 +147,7 @@ def word_frequency(tokens):
 '''
 Name:   most_common_words
 Type:   First class function
-Def:    
+Def:
 '''
 def most_common_words(frequency, num=3):
     #return list(map((frequency.most_common(num))))
@@ -155,19 +156,19 @@ def most_common_words(frequency, num=3):
 if __name__ == "__main__":
     while True:
         resp = fetch_user_data()
-    
+
         git_events = MyMonad(resp.json())
 
         gith_filtered_data = git_events.flat_filter(filter_PushEvents)
 
         git_push_msgs = gith_filtered_data.flat_map(get_PushEvent_msgs)
-        
+
         tokens = git_push_msgs.flat_map(tokenize)
 
         #print(f"tokens:{tokens.get()}\n")
 
         print(f"Total PushEvents:{len(gith_filtered_data.get())}")
-        
+
         print(f"Total words:{reduce(lambda total, sublist: total + len(sublist),tokens.value,0)}")
 
         test = tokens.get()
@@ -181,4 +182,3 @@ if __name__ == "__main__":
         print(f"next request in: {interval}")
         print(f"press Ctrl+Z to stop the programm\n")
         time.sleep(interval)
-    

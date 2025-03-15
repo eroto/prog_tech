@@ -1,14 +1,16 @@
-from multiprocessing import Pool, TimeoutError
-import time
 import os
+import time
+from multiprocessing import Pool
+from multiprocessing import TimeoutError
+
 
 def f(x):
-    return x*x
+    return x * x
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # start 4 worker processes
     with Pool(processes=4) as pool:
-
         # print "[0, 1, 4,..., 81]"
         print(pool.map(f, range(10)))
 
@@ -17,12 +19,12 @@ if __name__ == '__main__':
             print(i)
 
         # evaluate "f(20)" asynchronously
-        res = pool.apply_async(f, (20,))      # runs in *only* one process
-        print(res.get(timeout=1))             # prints "400"
+        res = pool.apply_async(f, (20,))  # runs in *only* one process
+        print(res.get(timeout=1))  # prints "400"
 
         # evaluate "os.getpid()" asynchronously
-        res = pool.apply_async(os.getpid, ()) # runs in *only* one process
-        print(res.get(timeout=1))             # prints the PID of that process
+        res = pool.apply_async(os.getpid, ())  # runs in *only* one process
+        print(res.get(timeout=1))  # prints the PID of that process
 
         # launching multiple evaluations asynchronously *may* use more processes
         multiple_results = [pool.apply_async(os.getpid, ()) for i in range(4)]

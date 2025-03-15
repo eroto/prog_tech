@@ -1,26 +1,28 @@
 #!/usr/bin/python3
 
-#corroutines using asyncio
+# corroutines using asyncio
 import asyncio
 
 
-#Coroutine function
+# Coroutine function
 async def cancellable_task():
     try:
-        while(True):
-            print(f"hola, task is running")
+        while True:
+            print("hola, task is running")
             await asyncio.sleep(0.5)
     except asyncio.CancelledError:
         print("Task ha been cancelled")
     finally:
         print("Pelaste")
 
-#coroutines can be launched through othere couroutines
+
+# coroutines can be launched through othere couroutines
 async def main():
     task = asyncio.create_task(cancellable_task())
     print(f"Context:{task.get_context()}")
     await asyncio.sleep(2)
     task.cancel()
 
-if __name__== "__main__":
+
+if __name__ == "__main__":
     asyncio.run(main())

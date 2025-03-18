@@ -76,6 +76,7 @@ def test():
     # Add more tasks using `put()`
     for task in TASKS2:
         task_queue.put(task)
+    print(f"Task Queue size:{task_queue.qsize}")
 
     # Get and print some more results
     for i in range(len(TASKS2)):

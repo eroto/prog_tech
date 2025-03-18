@@ -12,19 +12,26 @@ from operations import mul
 from operations import printer
 from operations import saluda
 
+import asyncio
 
 NUM_OF_PROC = 3
-
 
 #
 # Function run by worker processes
 #
 def worker(input, output):
-    # print(current_process().name,end="==>")
-    for func, args in iter(input.get, "STOP"):
-        # print(f"func:{func.__name__} args:{args}")
+    #print(current_process().name,end="==>")
+    for func, args in iter(input.get,"STOP"):
+        print(f"wrk c p: {current_process().name}")
         result = calculate(func, args)
         output.put(result)
+
+    '''
+    for func, args in iter(input.get, "STOP"):
+        print(f"func:{func.__name__} args:{args}")
+        result = calculate(func, args)
+        output.put(result)
+    '''
 
 
 #
@@ -32,12 +39,8 @@ def worker(input, output):
 #
 def calculate(func, args):
     result = func(*args)
-    return "%s says that %s%s = %s" % (
-        current_process().name,
-        func.__name__,
-        args,
-        result,
-    )
+    print(f"{current_process().name} says {func.__name__}{args} is {result}")
+    return result
 
 
 class dispatcher:
@@ -45,106 +48,108 @@ class dispatcher:
         if num_proc > 0:
             try:
                 self.num_of_proc = num_proc
-                self.task_queue = Queue()
-                self.result_queue = Queue()
+                #self.task_queue = Queue()
+                #self.result_queue = Queue()
                 self.proclist = []
             except ValueError as e:
                 print("An exception occurred: {e}")
         else:
             print("Other exception occurred")
 
-    def allocate_task(self, single_task):
-        self.task_queue.put(single_task)
+    async def allocate_task(self, tq, single_task):
+        tq.put(single_task)
 
-    def allocate_mul_task(self, task_list):
-        for tsk in task_list:
-            self.allocate_task(tsk)
+    async def allocate_mul_task(self, tq, task_list):
+        #for tsk in task_list:
+        #    await self.allocate_task(tq, tsk)
+        for func, args in task_list:
+            tq.put((func, args))
+        
+        await asyncio.sleep(0.1)
 
-    def collect_results(self):
-        for proc in self.proclist:
-            if not proc.is_alive():
-                print(f"result:{self.result_queue.get()}")
-            else:
-                print("Process are running")
+    async def collect_results(self, tq, rq):
+        results = []
+        for _ in range(tq.qsize()):
+            while rq.empty():
+                await asyncio.sleep(0.1)
+                result = rq.get()                
+                print(f"Consumed result:{result}")
+                results.append(result)
 
     def fetch_task(self):
         pass
 
-    def add_stop_signals(self):
+    def add_stop_signals(self, tq):
         for i in range(NUM_OF_PROC):
-            self.task_queue.put("STOP")
+            tq.put("STOP")
 
-    def run(self, w):
+    def run(self, tq, rq, wkr):
         # self.add_stop_signals()
         print("Processes started (Init)")
         for i in range(self.num_of_proc):
-            p = Process(target=w, args=(self.task_queue, self.result_queue))
+            p = Process(target=wkr, args=(tq, rq))
             self.proclist.append(p)
             p.start()
-        print("Processes started (End)")
 
 
-"""
+
 async def asyncio_main():
-    async_tsk1 = asyncio.create_task(worker)
-    await async_tsk1
-"""
-
-if __name__ == "__main__":
-    freeze_support()
-
-    t1 = time_ns()
+    task_queue = Queue()
+    result_queue = Queue()
+    task_list = []
 
     # Create master process
     MasterProc = dispatcher(3)
-    print("############ Dispatcher started ############")
     print(f"Number of Processs:{MasterProc.num_of_proc}")
-    # print(f"Task Queue size:{MasterProc.task_queue.qsize()}")
 
-    task_list = []
-    task_list = [(mul, (randrange(1, 10), randrange(1, 10))) for i in range(10)]
-    task_list.append((mul, (23, 1981)))
+    
+    #task_list = [(mul, (randrange(1, 10), randrange(1, 10))) for i in range(10)]
     task_list.append((saluda, "E"))
+    task_list.append((mul, (26, 95)))
     task_list.append((printer, "="))
     task_list.append((saluda, "P"))
     task_list.append((mul, (1977, 1981)))
     task_list.append((saluda, "S"))
     task_list.append((mul, (26, 95)))
     task_list.append((saluda, "R"))
-    # task_list.append((sum, (23, 67)))
+    print(f"Num Tasks: {len(task_list)}")
 
-    # MasterProc.allocate_task(task2)
-    # print(f"Task Queue size:{MasterProc.task_queue.qsize()}")
+    #for tsk in task_list:
+    #    task_queue.put(tsk)
+    
+    Producer = asyncio.create_task(MasterProc.allocate_mul_task(task_queue,task_list))
 
-    MasterProc.allocate_mul_task(task_list)
-    print(f"Task Queue size:{MasterProc.task_queue.qsize()}")
-
+    print(f"Task Queue size:{task_queue.qsize()}")
+    
     # asyncio.run(asyncio_main())
 
-    MasterProc.run(worker)
+    MasterProc.run(task_queue, result_queue, worker)
 
+    await Producer
+
+    # Tell child processes to stop
+    for i in range(NUM_OF_PROC):
+        task_queue.put("STOP")
+
+    #results = await MasterProc.collect_results(task_queue, result_queue)
+
+    for p in MasterProc.proclist:
+        p.join()
+'''
     # Get and print results
     print("Unordered results:")
     for i in range(len(task_list)):
         print("\t", MasterProc.result_queue.get())
+'''
 
-    """
-    for p in MasterProc.proclist:
-        p.join()
-        if p.is_alive():
-            print(f"{p.name} timed out, terminating...")
-            p.terminate()
 
-    while not MasterProc.result_queue.empty():
-        print(MasterProc.result_queue.get())'
-    """
-
-    # Tell child processes to stop
-    for i in range(NUM_OF_PROC):
-        MasterProc.task_queue.put("STOP")
-
+if __name__ == "__main__":
+    freeze_support()
+    print("############ Dispatcher started ############")
+    t1 = time_ns()
+    asyncio.run(asyncio_main())
     t2 = time_ns()
     workingt_time = (t2 - t1) / 1000000
-    print(f"All tasks processed in :{workingt_time} ms")
-print("############ Dispatcher end  ############")
+    print(f"All tasks processed in :{workingt_time} ms")    
+    print("############ Dispatcher end  ############")
 # MasterProc.shutdown()

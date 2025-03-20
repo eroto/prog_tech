@@ -9,13 +9,7 @@ from random import randrange
 from time import time_ns
 from time import time
 
-from operations import mul
-from operations import printer
-from operations import saluda
-
 import asyncio
-
-NUM_OF_PROC = 3
 
 
 
@@ -39,7 +33,7 @@ def calculate(func, args):
 
 
 class dispatcher:
-    def __init__(self, num_proc=NUM_OF_PROC):
+    def __init__(self, num_proc=1):
         if num_proc > 0:
             try:
                 self.num_of_proc = num_proc
@@ -76,7 +70,7 @@ class dispatcher:
 
 
     def stop_procs(self):
-        for i in range(NUM_OF_PROC):
+        for i in range(self.num_of_proc):
             self.task_queue.put("STOP")
 
 
@@ -86,54 +80,3 @@ class dispatcher:
             p = Process(target=wkr, args=(self.task_queue, self.result_queue))
             self.proclist.append(p)
             p.start()
-
-
-
-async def asyncio_main():
-    #task_queue = Queue()
-    #result_queue = Queue()
-    task_list = []
-
-    # Create master process
-    MasterProc = dispatcher(3)
-    print(f"Number of Processs:{MasterProc.num_of_proc}")
-   
-    #task_list = [(mul, (randrange(1, 10), randrange(1, 10))) for i in range(10)]
-    task_list.append((saluda, "E"))
-    task_list.append((mul, (26, 95)))
-    task_list.append((printer, "="))
-    task_list.append((saluda, "P"))
-    task_list.append((mul, (1977, 1981)))
-    task_list.append((saluda, "S"))
-    task_list.append((mul, (26, 95)))
-    task_list.append((saluda, "R"))
-    print(f"Num Tasks: {len(task_list)}")
-
-    Producer = asyncio.create_task(MasterProc.allocate_mul_task(task_list))
-    
-    #MasterProc.allocate_mul_task(task_queue,task_list)
-
-    await MasterProc.run(worker)
-
-    await Producer
-
-    MasterProc.stop_procs()
-
-    results = await MasterProc.collect_results()
-
-    for p in MasterProc.proclist:
-        p.join()
-
-    print(f"Tasks results:{results}")
-
-
-if __name__ == "__main__":
-    freeze_support()
-    print("############ Dispatcher started ############")
-    t1 = time()
-    asyncio.run(asyncio_main())
-    t2 = time()
-    workingt_time = (t2 - t1)
-    print(f"All tasks processed in :{workingt_time} s")    
-    print("############ Dispatcher end  ############")
-# MasterProc.shutdown()

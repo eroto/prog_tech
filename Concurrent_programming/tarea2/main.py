@@ -1,44 +1,66 @@
 #!/usr/bin/python3
-
+from multiprocessing import current_process
+from multiprocessing import freeze_support
+from multiprocessing import Process
+from multiprocessing import Queue
+from random import randrange
+from time import time_ns
+from time import time
+from utils.dispatcher import dispatcher
+from utils.dispatcher import worker
+from utils.dispatcher import calculate
+from utils.operations import mul
+from utils.operations import printer
+from utils.operations import saluda
 import asyncio
-import multiprocessing as mp
-
-from utils.dist_queue import AsyncScrapper
 
 
-def foo(q):
-    q.put("hello")
+NUM_OF_PROC = 4
 
+async def asyncio_main():
+    #task_queue = Queue()
+    #result_queue = Queue()
+    task_list = []
 
-async def the_task(q):
-    # await(num)
-    q.put(5 * 5)
+    # Create master process
+    MasterProc = dispatcher(NUM_OF_PROC)
+    print(f"Number of Processs:{MasterProc.num_of_proc}")
+   
+    #task_list = [(mul, (randrange(1, 10), randrange(1, 10))) for i in range(10)]
+    task_list.append((saluda, "E"))
+    task_list.append((mul, (26, 95)))
+    task_list.append((printer, "="))
+    task_list.append((saluda, "P"))
+    task_list.append((mul, (1977, 1981)))
+    task_list.append((saluda, "S"))
+    task_list.append((mul, (26, 95)))
+    task_list.append((saluda, "R"))
+    print(f"Num Tasks: {len(task_list)}")
 
+    Producer = asyncio.create_task(MasterProc.allocate_mul_task(task_list))
+    
+    #MasterProc.allocate_mul_task(task_queue,task_list)
 
-async def main():
-    urls = [
-        "https://httpbin.org/uuid",
-        "https://httpbin.org/uuid",
-        "https://httpbin.org/uuid",
-        # "https://api.github.com/events"
-    ]
+    await MasterProc.run(worker)
 
-    scrapper = AsyncScrapper(urls)
+    await Producer
 
-    ret = await scrapper.run()
-    print(f"ret: {ret}")
+    MasterProc.stop_procs()
+
+    results = await MasterProc.collect_results()
+
+    for p in MasterProc.proclist:
+        p.join()
+
+    print(f"Tasks results:{results}")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
-    print("Concurrency...")
-
-    mp.set_start_method("spawn")
-    q = mp.Queue(2)
-    p1 = mp.Process(target=foo, args=(q,))
-    p2 = mp.Process(target=the_task, args=(q,))
-    p1.start()
-    p2.start()
-    print(f"q.get():{q.get()}")
-    p1.join()
-    p2.join()
+    freeze_support()
+    print("############ Dispatcher started ############")
+    t1 = time()
+    asyncio.run(asyncio_main())
+    t2 = time()
+    workingt_time = (t2 - t1)
+    print(f"All tasks processed in :{workingt_time} s")    
+    print("############ Dispatcher end  ############")

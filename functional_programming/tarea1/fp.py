@@ -9,7 +9,7 @@ from itertools import chain
 
 import requests
 
-url2 = "
+url2 = "https://api.github.com/events"
 
 #A Maybe monada
 class MyMonad:

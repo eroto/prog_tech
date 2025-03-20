@@ -15,8 +15,13 @@ from utils.operations import saluda
 import asyncio
 
 
-NUM_OF_PROC = 4
+NUM_OF_PROC = 3
 
+'''
+Name: asyncio_main
+Desc: Main corutine, creates the dispatcher object with the number of processes as input, creates a task list,
+    allocote tasks in the task que and start the dispatcher that fetch tasks from the task queue until all completed
+'''
 async def asyncio_main():
     #task_queue = Queue()
     #result_queue = Queue()
